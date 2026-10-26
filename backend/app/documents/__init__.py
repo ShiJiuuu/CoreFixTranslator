@@ -12,6 +12,15 @@ ADAPTERS = [DocxAdapter(), XlsxAdapter(), PdfAdapter(), TextAdapter()]
 SUPPORTED_EXT = tuple(ext for adapter in ADAPTERS for ext in adapter.extensions)
 
 
+def output_suffix_for(path: Path) -> str:
+    ext = path.suffix.lower()
+    for adapter in ADAPTERS:
+        if ext in adapter.extensions:
+            declared = getattr(adapter, "output_suffix", None)
+            return declared or ext
+    return ext
+
+
 def get_adapter(path: Path) -> DocumentAdapter:
     ext = path.suffix.lower()
     for adapter in ADAPTERS:
@@ -28,4 +37,5 @@ __all__ = [
     "ParsedDocument",
     "Unit",
     "get_adapter",
+    "output_suffix_for",
 ]

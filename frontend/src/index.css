@@ -7,23 +7,23 @@ html, body, #root {
 }
 
 body {
-  @apply bg-ink text-slate-200 antialiased;
+  @apply bg-ink text-slate-800 antialiased;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans SC", sans-serif;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: #2b3242 transparent;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
 .input {
-  @apply w-full rounded-lg border border-line bg-[#0e1015] px-3 py-2 text-sm text-slate-200 outline-none focus:border-accent;
+  @apply w-full rounded-lg border border-line bg-white px-3 py-2 text-sm text-slate-800 outline-none transition focus:border-accent focus:ring-2 focus:ring-blue-100;
 }
 
 .label {
-  @apply mb-1 block text-xs text-slate-400;
+  @apply mb-1 block text-xs text-slate-500;
 }
 
 .card {
-  @apply rounded-xl border border-line bg-panel p-4;
+  @apply rounded-xl border border-line bg-panel p-4 shadow-sm;
 }

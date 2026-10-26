@@ -15,6 +15,7 @@ except Exception:
 
 class PdfAdapter:
     extensions = (".pdf",)
+    output_suffix = ".docx"
 
     def parse(self, path: Path, options: dict[str, Any] | None = None) -> ParsedDocument:
         if fitz is None:

@@ -146,7 +146,7 @@ def translate_document(
     hard_ok = all(bool(item.get("ok", True)) for item in checks)
 
     return {
-        "file": {"source": str(source_path), "output": str(out_path), "format": source_path.suffix.lower()},
+        "file": {"source": str(source_path), "output": str(out_path), "format": source_path.suffix.lower(), "output_format": out_path.suffix.lower()},
         "document_meta": parsed.meta,
         "budget": {
             "slot_ctx": slot_ctx,

@@ -67,7 +67,7 @@ export function GlossaryPage() {
             </Button>
           </div>
         </div>
-        {error && <div className="mt-2 text-sm text-red-300">{error}</div>}
+        {error && <div className="mt-2 text-sm text-red-600">{error}</div>}
       </Card>
 
       <Card title="全部术语库">
@@ -159,10 +159,10 @@ export function GlossaryDetailPage() {
         title={detail.data.name}
         actions={
           <div className="flex items-center gap-3 text-xs">
-            <a className="text-blue-300 hover:underline" href={"/api/glossaries/" + id + "/export.csv"}>
+            <a className="text-blue-600 hover:underline" href={"/api/glossaries/" + id + "/export.csv"}>
               导出 CSV
             </a>
-            <button className="text-red-300 hover:underline" onClick={removeGlossary}>
+            <button className="text-red-600 hover:underline" onClick={removeGlossary}>
               删除术语库
             </button>
           </div>
@@ -191,7 +191,7 @@ export function GlossaryDetailPage() {
             <Button variant="ghost" onClick={importTerms}>
               导入
             </Button>
-            {message && <span className="text-xs text-emerald-300">{message}</span>}
+            {message && <span className="text-xs text-emerald-700">{message}</span>}
           </div>
         </div>
       </Card>
@@ -215,7 +215,7 @@ export function GlossaryDetailPage() {
                     <td className="py-2 pr-3">{term.source_term}</td>
                     <td className="py-2 pr-3">{term.target_term}</td>
                     <td className="py-2">
-                      <button className="text-xs text-red-300 hover:underline" onClick={() => removeTerm(term)}>
+                      <button className="text-xs text-red-600 hover:underline" onClick={() => removeTerm(term)}>
                         删除
                       </button>
                     </td>

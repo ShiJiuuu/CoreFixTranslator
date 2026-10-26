@@ -189,8 +189,8 @@ export default function Settings() {
         <Button variant="ghost" onClick={testModel}>
           测试连接
         </Button>
-        {message && <span className="text-sm text-slate-400">{message}</span>}
-        {testResult && <span className="text-sm text-slate-400">{testResult}</span>}
+        {message && <span className="text-sm text-slate-500">{message}</span>}
+        {testResult && <span className="text-sm text-slate-500">{testResult}</span>}
       </div>
     </div>
   );

@@ -98,16 +98,21 @@ export default function Translate() {
         <div className="grid gap-4">
           {presetFileId ? (
             <div className="rounded-lg border border-line px-3 py-2 text-sm">
-              已选附件：<span className="text-slate-200">{presetName || presetFileId}</span>
+              已选附件：<span className="text-slate-800">{presetName || presetFileId}</span>
             </div>
           ) : (
             <Field label="文件（docx / xlsx / xlsm / pdf / txt / md）">
               <input
                 type="file"
                 accept=".docx,.xlsx,.xlsm,.pdf,.txt,.md"
-                className="input file:mr-3 file:rounded-md file:border-0 file:bg-accent/20 file:px-3 file:py-1 file:text-blue-200"
+                className="input file:mr-3 file:rounded-md file:border-0 file:bg-blue-50 file:px-3 file:py-1 file:text-blue-700"
                 onChange={(event) => setFile(event.target.files ? event.target.files[0] : null)}
               />
+              {file && file.name.toLowerCase().endsWith(".pdf") && (
+                <div className="mt-1 text-xs text-amber-600">
+                  PDF 译文会输出为 DOCX（按页面重建），不是原 PDF 文件。
+                </div>
+              )}
             </Field>
           )}
 
@@ -169,7 +174,7 @@ export default function Translate() {
             <textarea className="input min-h-24" value={glossaryText} onChange={(event) => setGlossaryText(event.target.value)} />
           </Field>
 
-          <label className="flex items-center gap-2 text-sm text-slate-400">
+          <label className="flex items-center gap-2 text-sm text-slate-500">
             <input type="checkbox" checked={headers} onChange={(event) => setHeaders(event.target.checked)} />
             同时翻译 Word 页眉页脚
           </label>
@@ -178,7 +183,7 @@ export default function Translate() {
             <Button onClick={start} disabled={busy}>
               {busy ? "提交中…" : "开始翻译"}
             </Button>
-            {error && <span className="text-sm text-red-300">{error}</span>}
+            {error && <span className="text-sm text-red-600">{error}</span>}
           </div>
         </div>
       </Card>
@@ -187,7 +192,7 @@ export default function Translate() {
         <Card
           title="任务进度"
           actions={
-            <Link to={"/jobs/" + current.id} className="text-xs text-blue-300 hover:underline">
+            <Link to={"/jobs/" + current.id} className="text-xs text-blue-600 hover:underline">
               任务详情
             </Link>
           }
@@ -203,16 +208,16 @@ export default function Translate() {
             {current.progress}%
             {current.total_units ? " · " + (current.done_units || 0) + "/" + current.total_units + " 段" : ""}
           </div>
-          {current.error_summary && <div className="mt-2 text-sm text-red-300">{current.error_summary}</div>}
+          {current.error_summary && <div className="mt-2 text-sm text-red-600">{current.error_summary}</div>}
           {done && current.status === "completed" && (
             <div className="mt-3 flex gap-4 text-sm">
-              <a className="text-blue-300 hover:underline" href={"/api/jobs/" + current.id + "/download"}>
+              <a className="text-blue-600 hover:underline" href={"/api/jobs/" + current.id + "/download"}>
                 下载译文
               </a>
-              <a className="text-blue-300 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=report"}>
+              <a className="text-blue-600 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=report"}>
                 质量报告
               </a>
-              <a className="text-blue-300 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=source"}>
+              <a className="text-blue-600 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=source"}>
                 原文件
               </a>
             </div>

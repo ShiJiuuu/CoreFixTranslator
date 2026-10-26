@@ -37,5 +37,32 @@ def test_docx_roundtrip(tmp_path: Path):
     assert len(reopened.paragraphs) == 2
     assert len(reopened.tables) == 1
     assert reopened.paragraphs[0].text.startswith("[zh-CN]")
+    assert reopened.tables[0].cell(0, 0).text.startswith("[zh-CN]")
+    assert reopened.tables[0].cell(0, 1).text.startswith("[zh-CN]")
     assert report["hard_checks_ok"] is True
     assert report["units"] >= 4
+
+
+def test_nested_table_cell_translated(tmp_path: Path):
+    source = tmp_path / "nested.docx"
+    out = tmp_path / "nested.out.docx"
+    document = Document()
+    outer = document.add_table(rows=1, cols=1)
+    inner = outer.cell(0, 0).add_table(rows=1, cols=1)
+    inner.cell(0, 0).text = "Nested cell"
+    document.save(str(source))
+
+    settings = env_defaults()
+    report = translate_document(
+        source,
+        out,
+        settings=settings,
+        model=FakeAdapter(settings),
+        source_lang="en",
+        target_lang="zh-CN",
+    )
+
+    reopened = Document(str(out))
+    nested = reopened.tables[0].cell(0, 0).tables[0]
+    assert nested.cell(0, 0).text.startswith("[zh-CN]")
+    assert report["units"] == 1

@@ -1,10 +1,23 @@
-# 放到 /etc/caddy/Caddyfile，替换站点地址
+# 前后端分离部署：Caddy 托管 React 静态文件，/api 反代到 FastAPI
+# 替换站点地址；dist 用 npm run build 生成
 http://192.168.1.10 {
     encode gzip
-    reverse_proxy 127.0.0.1:8000 {
-        flush_interval -1
-    }
+
     request_body {
         max_size 110MB
+    }
+
+    # API 优先匹配，SSE 不做缓冲
+    handle /api/* {
+        reverse_proxy 127.0.0.1:8000 {
+            flush_interval -1
+        }
+    }
+
+    # React 单页：静态文件 + history fallback
+    handle {
+        root * /opt/corefix/frontend/dist
+        try_files {path} /index.html
+        file_server
     }
 }

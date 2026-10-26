@@ -40,7 +40,7 @@ export function Jobs() {
               {jobs.data.jobs.map((job) => (
                 <tr key={job.id} className="border-t border-line">
                   <td className="max-w-[220px] truncate py-3 pr-3">
-                    <Link to={"/jobs/" + job.id} className="hover:text-blue-300">
+                    <Link to={"/jobs/" + job.id} className="hover:text-blue-600">
                       {job.file_name || job.id}
                     </Link>
                   </td>
@@ -54,22 +54,22 @@ export function Jobs() {
                   <td className="hidden py-3 pr-3 text-xs text-slate-500 sm:table-cell">{formatTime(job.created_at)}</td>
                   <td className="space-x-3 py-3 text-xs">
                     {job.status === "completed" && (
-                      <a className="text-blue-300 hover:underline" href={"/api/jobs/" + job.id + "/download"}>
+                      <a className="text-blue-600 hover:underline" href={"/api/jobs/" + job.id + "/download"}>
                         下载
                       </a>
                     )}
                     {(job.status === "failed" || job.status === "cancelled") && (
-                      <button className="text-blue-300 hover:underline" onClick={() => act("/api/jobs/" + job.id + "/retry")}>
+                      <button className="text-blue-600 hover:underline" onClick={() => act("/api/jobs/" + job.id + "/retry")}>
                         重试
                       </button>
                     )}
                     {["queued", "parsing", "translating", "rebuilding"].includes(job.status) && (
-                      <button className="text-red-300 hover:underline" onClick={() => act("/api/jobs/" + job.id + "/cancel")}>
+                      <button className="text-red-600 hover:underline" onClick={() => act("/api/jobs/" + job.id + "/cancel")}>
                         取消
                       </button>
                     )}
                     {job.status === "completed" && (
-                      <a className="text-slate-400 hover:underline" href={"/api/jobs/" + job.id + "/download?kind=report"}>
+                      <a className="text-slate-500 hover:underline" href={"/api/jobs/" + job.id + "/download?kind=report"}>
                         报告
                       </a>
                     )}
@@ -120,29 +120,34 @@ export function JobDetail() {
         actions={<StatusPill status={current.status} />}
       >
         <Progress value={current.progress} tone={current.status === "failed" ? "err" : undefined} />
-        <div className="mt-3 grid gap-2 text-sm text-slate-400 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-2">
           <div>进度：{current.progress}%</div>
           <div>阶段：{current.stage || "-"}</div>
           <div>单元：{current.done_units || 0}/{current.total_units || "-"}</div>
           <div>创建：{formatTime(current.created_at)}</div>
         </div>
         {current.error_summary && (
-          <div className="mt-3 rounded-lg border border-red-400/30 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+          <div className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
             {current.error_code}: {current.error_summary}
+          </div>
+        )}
+        {current.file_name?.toLowerCase().endsWith(".pdf") && current.status === "completed" && (
+          <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            PDF 译文是重建后的 DOCX 文件，下载后用 Word 打开；原 PDF 的逐页版式不会保留。
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-3 text-sm">
           {current.status === "completed" && (
             <>
-              <a className="text-blue-300 hover:underline" href={"/api/jobs/" + current.id + "/download"}>
+              <a className="text-blue-600 hover:underline" href={"/api/jobs/" + current.id + "/download"}>
                 下载译文
               </a>
-              <a className="text-blue-300 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=report"}>
+              <a className="text-blue-600 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=report"}>
                 下载报告
               </a>
             </>
           )}
-          <a className="text-slate-400 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=source"}>
+          <a className="text-slate-500 hover:underline" href={"/api/jobs/" + current.id + "/download?kind=source"}>
             原文件
           </a>
           {(current.status === "failed" || current.status === "cancelled") && (
@@ -161,16 +166,16 @@ export function JobDetail() {
       {report.data && (
         <Card title="质量检查">
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="text-sm text-slate-400">单元总数：{report.data.units}</div>
-            <div className="text-sm text-slate-400">已翻译：{report.data.translated}</div>
-            <div className="text-sm text-slate-400">耗时：{report.data.duration_seconds}s</div>
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-500">单元总数：{report.data.units}</div>
+            <div className="text-sm text-slate-500">已翻译：{report.data.translated}</div>
+            <div className="text-sm text-slate-500">耗时：{report.data.duration_seconds}s</div>
+            <div className="text-sm text-slate-500">
               结构检查：{report.data.hard_checks_ok ? "通过" : "存在问题"}
             </div>
           </div>
-          <div className="mt-4 space-y-1 text-xs text-slate-400">
+          <div className="mt-4 space-y-1 text-xs text-slate-500">
             {report.data.checks.map((check, index) => (
-              <div key={index} className={check.ok ? "text-slate-400" : "text-red-300"}>
+              <div key={index} className={check.ok ? "text-slate-500" : "text-red-600"}>
                 {check.check}: {check.ok ? "OK" : "FAIL"}
               </div>
             ))}
@@ -183,7 +188,7 @@ export function JobDetail() {
             ))}
           </div>
           {report.data.failed.length > 0 && (
-            <div className="mt-3 text-xs text-amber-300">未拿到译文的单元：{report.data.failed.length} 个</div>
+            <div className="mt-3 text-xs text-amber-600">未拿到译文的单元：{report.data.failed.length} 个</div>
           )}
         </Card>
       )}

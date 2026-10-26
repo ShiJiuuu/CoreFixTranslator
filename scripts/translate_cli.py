@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from backend.app.config import env_defaults
+from backend.app.documents import output_suffix_for
 from backend.app.model import FakeAdapter, LlamaCppAdapter
 from backend.app.pipeline import translate_document
 from backend.app.translate.glossary import parse_glossary
@@ -34,7 +35,7 @@ def main() -> None:
     source = Path(args.input)
     if not source.exists():
         raise SystemExit("input not found: " + str(source))
-    out = Path(args.out) if args.out else source.with_name(source.stem + "." + args.to + source.suffix)
+    out = Path(args.out) if args.out else source.with_name(source.stem + "." + args.to + output_suffix_for(source))
 
     settings = env_defaults()
     glossary = []

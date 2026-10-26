@@ -41,7 +41,7 @@ export default function Workbench() {
       <Card
         title="正在处理"
         actions={
-          <Link to="/jobs" className="text-xs text-blue-300 hover:underline">
+          <Link to="/jobs" className="text-xs text-blue-600 hover:underline">
             全部任务
           </Link>
         }
@@ -73,7 +73,7 @@ export default function Workbench() {
             <ul className="space-y-2">
               {jobs.data.jobs.map((job) => (
                 <li key={job.id} className="flex items-center justify-between gap-3 text-sm">
-                  <Link to={"/jobs/" + job.id} className="truncate hover:text-blue-300">
+                  <Link to={"/jobs/" + job.id} className="truncate hover:text-blue-600">
                     {job.file_name || job.id}
                   </Link>
                   <span className="shrink-0 text-xs text-slate-500">{formatTime(job.created_at)}</span>
@@ -86,7 +86,7 @@ export default function Workbench() {
         <Card
           title="最近对话"
           actions={
-            <Link to="/chat" className="text-xs text-blue-300 hover:underline">
+            <Link to="/chat" className="text-xs text-blue-600 hover:underline">
               全部对话
             </Link>
           }
@@ -97,7 +97,7 @@ export default function Workbench() {
             <ul className="space-y-2">
               {chats.data.chats.map((chat) => (
                 <li key={chat.id} className="flex items-center justify-between gap-3 text-sm">
-                  <Link to={"/chat/" + chat.id} className="truncate hover:text-blue-300">
+                  <Link to={"/chat/" + chat.id} className="truncate hover:text-blue-600">
                     {chat.title}
                   </Link>
                   <span className="shrink-0 text-xs text-slate-500">{chat.message_count} 条</span>

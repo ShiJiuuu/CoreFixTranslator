@@ -3,10 +3,10 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        ink: "#0f1115",
-        panel: "#171a21",
-        line: "#262b36",
-        accent: "#5b8cff",
+        ink: "#f5f7fb",
+        panel: "#ffffff",
+        line: "#e5e9f2",
+        accent: "#2f6fed",
       },
     },
   },

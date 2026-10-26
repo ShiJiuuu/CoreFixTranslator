@@ -12,6 +12,37 @@
 - 质量报告：单元数、缺失、数字/URL/占位符保留率，随结果下载
 - 设置页：模型地址、采样、批预算、聊天上下文，保存即生效
 
+## 前后端关系（开发与生产）
+
+这是前后端分离的两个工程：
+
+    frontend/   React + TypeScript + Vite，产物在 frontend/dist
+    backend/    FastAPI，只提供 /api
+
+开发模式（两个进程，改代码热更新）：
+
+    # 终端 1：后端
+    .venv/bin/uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000 --env-file .env
+
+    # 终端 2：前端（Vite 把 /api 代理到 127.0.0.1:8000）
+    cd frontend
+    npm install
+    npm run dev -- --host 0.0.0.0
+
+    浏览器打开 http://服务器IP:5173
+
+生产模式，二选一：
+
+    A. 前后端分离（推荐，和 Plan 一致）
+       Caddy / Nginx 托管 frontend/dist，/api 反代到 127.0.0.1:8000
+       参考 deploy/Caddyfile.example
+
+    B. 单端口（省一个进程）
+       只跑 FastAPI，由它托管 frontend/dist
+       下面的部署步骤就是这种方式
+
+Node.js 只在开发前端和构建 dist 时需要；生产用方式 A 或 B 都不需要 Node。
+
 ## 部署（Ubuntu 服务器）
 
 1. 准备 Python 3.10+ 与项目目录：
@@ -26,7 +57,10 @@
 
         cp .env.example .env
 
-3. 前端（仓库已带 frontend/dist，可跳过；改过前端才需要）：
+3. 前端构建（仓库已带 frontend/dist，可跳过；改过前端才需要）：
+
+   注意：这是单端口方式 B。若用 Caddy 托管静态文件（方式 A），
+   第 4 步的 FastAPI 只需监听 127.0.0.1。
 
         cd frontend
         npm install
@@ -94,7 +128,7 @@ llama-server 需要支持 OpenAI 兼容接口，建议参数：
 
 ## 已知限制
 
-- PDF 第一版只输出重建 DOCX（单语），不保证原版式。
+- PDF 第一版只输出重建 DOCX（单语），下载文件名以 .docx 结尾，不保证原版式。
 - DOCX 不处理脚注、尾注、文本框、批注、修订、SmartArt。
 - XLSX 不改公式、图表、透视表；.xlsm 仅保留 VBA 工程。
 - 无登录，默认只适合可信局域网；对外请自行加反代与访问控制。

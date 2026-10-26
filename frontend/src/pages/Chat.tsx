@@ -113,14 +113,14 @@ export default function Chat() {
               key={chat.id}
               className={cx(
                 "group flex items-center justify-between gap-2 rounded-lg px-2 py-2 text-sm",
-                chat.id === id ? "bg-accent/15 text-blue-200" : "text-slate-400 hover:bg-white/5",
+                chat.id === id ? "bg-blue-50 text-blue-700" : "text-slate-500 hover:bg-slate-100",
               )}
             >
               <Link to={"/chat/" + chat.id} className="min-w-0 flex-1 truncate">
                 {chat.title}
               </Link>
               <button
-                className="hidden text-xs text-slate-500 hover:text-red-300 group-hover:block"
+                className="hidden text-xs text-slate-500 hover:text-red-600 group-hover:block"
                 onClick={() => removeChat(chat.id)}
                 aria-label="删除对话"
               >
@@ -141,13 +141,13 @@ export default function Chat() {
           <>
             <header className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
               <div className="min-w-0">
-                <Link to="/chat" className="mr-2 text-xs text-slate-500 hover:text-slate-300 md:hidden">
+                <Link to="/chat" className="mr-2 text-xs text-slate-500 hover:text-slate-600 md:hidden">
                   ← 返回
                 </Link>
                 <span className="text-sm font-medium">{detail.data?.title || "对话"}</span>
               </div>
               <button
-                className="text-xs text-slate-500 hover:text-red-300"
+                className="text-xs text-slate-500 hover:text-red-600"
                 onClick={() => removeChat(id)}
               >
                 删除对话
@@ -160,21 +160,28 @@ export default function Chat() {
                   <div
                     className={cx(
                       "max-w-[85%] rounded-xl px-3 py-2 text-sm",
-                      message.role === "user" ? "bg-accent/20 text-slate-100" : "bg-[#0e1015] text-slate-200",
+                      message.role === "user" ? "bg-accent text-white" : "bg-slate-100 text-slate-800",
                     )}
                   >
                     <div className="whitespace-pre-wrap break-words">{message.content}</div>
                     {message.attachments.length > 0 && (
                       <div className="mt-2 flex flex-wrap gap-2">
                         {message.attachments.map((file) => (
-                          <span key={file.id} className="rounded-md border border-line px-2 py-1 text-xs text-slate-400">
+                          <span
+                            key={file.id}
+                            className={
+                              message.role === "user"
+                                ? "rounded-md border border-white/40 px-2 py-1 text-xs text-blue-50"
+                                : "rounded-md border border-line px-2 py-1 text-xs text-slate-500"
+                            }
+                          >
                             {file.original_filename}（{formatBytes(file.size_bytes)}）
                           </span>
                         ))}
                       </div>
                     )}
                     {message.role === "assistant" && message.status !== "complete" && (
-                      <div className="mt-1 text-xs text-amber-300">
+                      <div className="mt-1 text-xs text-amber-600">
                         {message.status === "stopped" ? "已停止生成" : "生成出错"}
                       </div>
                     )}
@@ -184,12 +191,12 @@ export default function Chat() {
 
               {localUser && (
                 <div className="flex justify-end">
-                  <div className="max-w-[85%] rounded-xl bg-accent/20 px-3 py-2 text-sm whitespace-pre-wrap">{localUser}</div>
+                  <div className="max-w-[85%] rounded-xl bg-accent px-3 py-2 text-sm text-white whitespace-pre-wrap">{localUser}</div>
                 </div>
               )}
               {streaming && (
                 <div className="flex justify-start">
-                  <div className="max-w-[85%] rounded-xl bg-[#0e1015] px-3 py-2 text-sm whitespace-pre-wrap">
+                  <div className="max-w-[85%] rounded-xl bg-slate-100 px-3 py-2 text-sm whitespace-pre-wrap">
                     {streamText || "…"}
                   </div>
                 </div>
@@ -197,21 +204,21 @@ export default function Chat() {
               <div ref={bottomRef} />
             </div>
 
-            {error && <div className="border-t border-red-400/20 bg-red-500/10 px-4 py-2 text-xs text-red-200">{error}</div>}
+            {error && <div className="border-t border-red-400/20 bg-red-50 px-4 py-2 text-xs text-red-700">{error}</div>}
 
             <div className="border-t border-line p-3">
               {pendingFiles.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-2">
                   {pendingFiles.map((file) => (
-                    <span key={file.id} className="flex items-center gap-2 rounded-md border border-line px-2 py-1 text-xs text-slate-400">
+                    <span key={file.id} className="flex items-center gap-2 rounded-md border border-line px-2 py-1 text-xs text-slate-500">
                       {file.filename}
                       {TRANSLATABLE.some((ext) => file.filename.toLowerCase().endsWith(ext)) && (
-                        <Link to={"/translate?file=" + file.id} className="text-blue-300 hover:underline">
+                        <Link to={"/translate?file=" + file.id} className="text-blue-600 hover:underline">
                           翻译
                         </Link>
                       )}
                       <button
-                        className="text-slate-500 hover:text-red-300"
+                        className="text-slate-500 hover:text-red-600"
                         onClick={() => setPendingFiles((prev) => prev.filter((item) => item.id !== file.id))}
                       >
                         ×
@@ -222,7 +229,7 @@ export default function Chat() {
               )}
               <div className="flex items-end gap-2">
                 <button
-                  className="rounded-lg border border-line px-3 py-2 text-sm text-slate-400 hover:text-slate-200"
+                  className="rounded-lg border border-line px-3 py-2 text-sm text-slate-500 hover:text-slate-800"
                   onClick={() => fileRef.current?.click()}
                   aria-label="添加附件"
                 >

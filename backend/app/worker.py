@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from . import db
+from .documents import output_suffix_for
 from .documents.base import DocumentError
 from .model import ModelError, make_model
 from .pipeline import PipelineError, translate_document
@@ -69,7 +70,7 @@ class TranslationWorker(threading.Thread):
         source_path = Path(source["stored_path"])
         out_dir = self.data_dir / "results" / job_id
         out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = out_dir / ("translated" + source_path.suffix.lower())
+        out_path = out_dir / ("translated" + output_suffix_for(source_path))
 
         db.update_job(job_id, status="translating", stage="translating")
         db.add_event(job_id, "info", "start translation", stage="translating")

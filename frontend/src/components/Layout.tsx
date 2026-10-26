@@ -51,7 +51,7 @@ export default function Layout() {
               className={({ isActive }) =>
                 cx(
                   "whitespace-nowrap rounded-lg px-3 py-2 text-sm",
-                  isActive ? "bg-accent/15 text-blue-200" : "text-slate-400 hover:text-slate-200",
+                  isActive ? "bg-blue-50 text-blue-700" : "text-slate-500 hover:text-slate-800",
                 )
               }
             >
