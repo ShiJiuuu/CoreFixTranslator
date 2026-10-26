@@ -1,0 +1,10 @@
+# 放到 /etc/caddy/Caddyfile，替换站点地址
+http://192.168.1.10 {
+    encode gzip
+    reverse_proxy 127.0.0.1:8000 {
+        flush_interval -1
+    }
+    request_body {
+        max_size 110MB
+    }
+}

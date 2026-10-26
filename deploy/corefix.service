@@ -1,0 +1,18 @@
+[Unit]
+Description=CoreFix document translator
+After=network.target
+
+[Service]
+Type=simple
+User=corefix
+Group=corefix
+WorkingDirectory=/opt/corefix
+EnvironmentFile=/opt/corefix/.env
+ExecStart=/opt/corefix/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

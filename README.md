@@ -1,0 +1,100 @@
+# 文档翻译器（本地模型版）
+
+把 Word / Excel / PDF / 文本 丢进去，调用你机器上的 llama.cpp（默认 127.0.0.1:8080）翻译，下载译文。
+
+## 能力
+
+- 格式：.docx / .xlsx / .xlsm / .pdf（原生文字）/ .txt / .md
+- 语言：源语言自动或指定，目标语言中/英/日/韩/法/德/西/俄
+- 对话：流式输出、停止生成、附件（可一键转翻译）、历史会话
+- 术语库：多库管理、术语增删、CSV 导入导出，按库应用到任务
+- 任务：上传即返回任务号，后台排队执行，可看进度、取消、重试、下载
+- 质量报告：单元数、缺失、数字/URL/占位符保留率，随结果下载
+- 设置页：模型地址、采样、批预算、聊天上下文，保存即生效
+
+## 部署（Ubuntu 服务器）
+
+1. 准备 Python 3.10+ 与项目目录：
+
+        cd /opt
+        git clone <this-repo> corefix
+        cd corefix
+        python3 -m venv .venv
+        .venv/bin/pip install -r requirements.txt
+
+2. 配置：
+
+        cp .env.example .env
+
+3. 前端（仓库已带 frontend/dist，可跳过；改过前端才需要）：
+
+        cd frontend
+        npm install
+        npm run build
+        cd ..
+
+4. 启动：
+
+        .venv/bin/uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --workers 1 --env-file .env
+
+   浏览器打开 http://服务器IP:8000
+
+5. 开机自启：参考 deploy/corefix.service，放到 /etc/systemd/system/ 后
+
+        systemctl daemon-reload
+        systemctl enable --now corefix
+
+6. 反代与 HTTPS（可选）：参考 deploy/Caddyfile.example
+
+## 离线预览（不需要模型）
+
+    MODEL_BACKEND=fake .venv/bin/uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --env-file .env
+
+假模型会回显你的消息，用于验证界面、流式输出、任务流程；翻译任务会输出带 [目标语言] 前缀的占位文本。
+
+## 模型要求
+
+注意：后台 Worker 跑在 API 进程内，必须使用 --workers 1（默认即是）。
+
+llama-server 需要支持 OpenAI 兼容接口，建议参数：
+
+    --jinja
+    -c 262144
+    --flash-attn
+    --cache-type-k q8_0 --cache-type-v q8_0
+    --host 127.0.0.1 --port 8080
+
+翻译时应用会显式关闭 thinking（chat_template_kwargs.enable_thinking=false），
+并在解析侧兜底剥离 think 标签；若构建不认这个字段，设置页可改 json_mode 与采样。
+
+## 目录
+
+    backend/app/           API、队列、翻译流水线
+    backend/app/model/     llama.cpp 适配器（含 Fake 适配器用于单测）
+    backend/app/documents/ DOCX / XLSX / PDF / 文本 解析与写回
+    frontend/              React + TypeScript + Vite + Tailwind 前端
+    scripts/               probe_model.py（环境探针）、translate_cli.py（命令行翻译）
+    deploy/                systemd 与 Caddy 示例
+    tests/                 单元测试（不需要模型）
+
+## 开发模式
+
+后端：
+
+    .venv/bin/uvicorn backend.app.main:app --reload --env-file .env
+
+前端（Vite 代理 /api 到 127.0.0.1:8000）：
+
+    cd frontend && npm run dev
+
+## 验证
+
+    .venv/bin/python scripts/probe_model.py
+    .venv/bin/python scripts/translate_cli.py a.docx --to zh-CN --out a.zh.docx
+
+## 已知限制
+
+- PDF 第一版只输出重建 DOCX（单语），不保证原版式。
+- DOCX 不处理脚注、尾注、文本框、批注、修订、SmartArt。
+- XLSX 不改公式、图表、透视表；.xlsm 仅保留 VBA 工程。
+- 无登录，默认只适合可信局域网；对外请自行加反代与访问控制。
