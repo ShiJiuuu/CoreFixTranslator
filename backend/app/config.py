@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
+
+
+def default_data_dir() -> Path:
+    return Path(__file__).resolve().parents[2] / "data"
 
 
 def _s(name: str, default: str) -> str:
@@ -63,6 +68,8 @@ def env_defaults() -> dict[str, Any]:
         "chat_context_ratio": _f("CHAT_CONTEXT_RATIO", 0.6),
         "chat_max_history_turns": _i("CHAT_MAX_HISTORY_TURNS", 20),
         "chat_max_output_tokens": _i("CHAT_MAX_OUTPUT_TOKENS", 2048),
+        "chat_attachment_max_chars": _i("CHAT_ATTACHMENT_MAX_CHARS", 8000),
+        "chat_attachment_total_chars": _i("CHAT_ATTACHMENT_TOTAL_CHARS", 16000),
     }
 
 
@@ -83,6 +90,8 @@ NUMERIC_RULES: dict[str, tuple[str, float, float]] = {
     "chat_context_ratio": ("float", 0.2, 0.95),
     "chat_max_history_turns": ("int", 1, 100),
     "chat_max_output_tokens": ("int", 256, 8192),
+    "chat_attachment_max_chars": ("int", 500, 100000),
+    "chat_attachment_total_chars": ("int", 500, 200000),
 }
 
 EDITABLE_KEYS = [
@@ -108,6 +117,8 @@ EDITABLE_KEYS = [
     "chat_context_ratio",
     "chat_max_history_turns",
     "chat_max_output_tokens",
+    "chat_attachment_max_chars",
+    "chat_attachment_total_chars",
 ]
 
 

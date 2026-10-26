@@ -138,7 +138,7 @@ export function JobDetail() {
         )}
         {current.file_name?.toLowerCase().endsWith(".pdf") && current.status === "completed" && (
           <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            PDF 译文是重新排版的 PDF（由 DOCX 转换生成），不保留原文件的逐页版式。
+            PDF 译文默认原位替换文本，保留图片与版式；过长译文会自动缩小字号。
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-3 text-sm">

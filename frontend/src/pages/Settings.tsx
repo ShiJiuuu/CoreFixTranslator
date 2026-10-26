@@ -70,6 +70,8 @@ const GROUPS: { title: string; fields: FieldDef[] }[] = [
       { key: "chat_context_ratio", label: "上下文占比", type: "number", step: "0.05" },
       { key: "chat_max_history_turns", label: "最多轮数", type: "number" },
       { key: "chat_max_output_tokens", label: "输出上限", type: "number" },
+      { key: "chat_attachment_max_chars", label: "单个附件字符上限", type: "number" },
+      { key: "chat_attachment_total_chars", label: "附件总字符上限", type: "number" },
     ],
   },
   {
@@ -84,6 +86,12 @@ const GROUPS: { title: string; fields: FieldDef[] }[] = [
 export default function Settings() {
   const queryClient = useQueryClient();
   const settings = useQuery({ queryKey: ["settings"], queryFn: () => api<SettingsPayload>("/api/settings") });
+  const info = useQuery({
+    queryKey: ["system-info"],
+    queryFn: () =>
+      api<{ data_dir: string; db_path: string; counts: Record<string, number> }>("/api/system/info"),
+    refetchInterval: 15000,
+  });
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [message, setMessage] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -181,6 +189,22 @@ export default function Settings() {
           </div>
         </Card>
       ))}
+
+      <Card title="数据存储">
+        {info.data ? (
+          <div className="space-y-1 text-xs text-slate-500">
+            <div>数据目录：{info.data.data_dir}</div>
+            <div>数据库：{info.data.db_path}</div>
+            <div>
+              任务 {info.data.counts.jobs ?? 0} · 对话 {info.data.counts.chats ?? 0} · 术语库{" "}
+              {info.data.counts.glossaries ?? 0} · 文件 {info.data.counts.files ?? 0}
+            </div>
+            <div>备份时请连同 app.db 与 storage/ 一起备份。</div>
+          </div>
+        ) : (
+          <div className="text-xs text-slate-400">读取中…</div>
+        )}
+      </Card>
 
       <div className="flex flex-wrap items-center gap-3">
         <Button onClick={save} disabled={busy || !settings.data}>

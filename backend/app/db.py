@@ -147,6 +147,26 @@ def new_id(prefix: str) -> str:
     return prefix + "_" + uuid.uuid4().hex[:16]
 
 
+def db_path() -> str:
+    return str(_DB_PATH)
+
+
+def counts() -> dict[str, int]:
+    tables = {
+        "jobs": "jobs",
+        "chats": "chats",
+        "messages": "chat_messages",
+        "glossaries": "glossaries",
+        "terms": "glossary_terms",
+        "files": "files",
+    }
+    result: dict[str, int] = {}
+    with closing(connect()) as conn:
+        for label, table in tables.items():
+            result[label] = int(conn.execute("SELECT COUNT(*) FROM " + table).fetchone()[0])
+    return result
+
+
 def load_settings() -> dict[str, Any]:
     values = env_defaults()
     with closing(connect()) as conn:

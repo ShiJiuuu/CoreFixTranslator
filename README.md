@@ -86,17 +86,35 @@ Node.js 只在开发前端和构建 dist 时需要；生产用方式 A 或 B 都
 
 假模型会回显你的消息，用于验证界面、流式输出、任务流程；翻译任务会输出带 [目标语言] 前缀的占位文本。
 
-## PDF 导出依赖
+## 数据持久化
 
-PDF 输入会先重建 DOCX，再调用 LibreOffice 转成 PDF：
+- 数据目录由 DATA_DIR 决定；相对路径按**代码目录**解析，不随启动位置变化
+- 默认是代码目录下的 data/（含 app.db 与 storage/）
+- 生产建议 DATA_DIR=/var/lib/corefix，并确保部署/升级时该目录不被覆盖
+- 备份时连同 app.db 与 storage/ 一起备份
+- 设置页底部会显示实际数据目录、数据库路径与记录数，可用来确认
+
+## PDF 输出模式
+
+默认 PDF_OUTPUT_MODE=overlay：在原 PDF 上擦除原文、原位写入译文。
+
+- 保留图片、表格线、页眉页脚、分栏等版式
+- 不依赖 LibreOffice
+- 译文变长时自动缩小字号；极端情况下可能溢出文本框或字号偏小
+- 扫描件（图片型 PDF）没有可提取文字，不会被翻译
+
+需要“重排成新 PDF”时改用 reflow：
+
+    PDF_OUTPUT_MODE=reflow
+
+reflow 会重建 DOCX 再调用 LibreOffice 转 PDF，需要：
 
     apt install libreoffice-writer fonts-noto-cjk
-
-    # .env 可选
+    # 可选
     SOFFICE_BIN=/usr/bin/soffice
     PDF_FONT_NAME=Noto Sans CJK SC
 
-没装 LibreOffice 时，PDF 任务会以 pdf_converter_missing 失败，其它格式不受影响。
+没装 LibreOffice 时，reflow 模式的 PDF 任务会以 pdf_converter_missing 失败，overlay 不受影响。
 
 ## 模型要求
 
@@ -140,7 +158,7 @@ llama-server 需要支持 OpenAI 兼容接口，建议参数：
 
 ## 已知限制
 
-- PDF 译文是重新排版的 PDF：先重建 DOCX 再转 PDF，不保留原文件的逐页版式。
+- PDF 默认原位替换文本（保留版式）；可切 reflow 模式重排，版式不保留。
 - DOCX 不处理脚注、尾注、文本框、批注、修订、SmartArt。
 - XLSX 不改公式、图表、透视表；.xlsm 仅保留 VBA 工程。
 - 无登录，默认只适合可信局域网；对外请自行加反代与访问控制。

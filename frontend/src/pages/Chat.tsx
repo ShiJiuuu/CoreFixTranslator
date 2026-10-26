@@ -208,6 +208,9 @@ export default function Chat() {
 
             <div className="border-t border-line p-3">
               {pendingFiles.length > 0 && (
+                <div className="mb-1 text-xs text-slate-400">附件正文会作为文本提供给模型（过长会截断）。</div>
+              )}
+              {pendingFiles.length > 0 && (
                 <div className="mb-2 flex flex-wrap gap-2">
                   {pendingFiles.map((file) => (
                     <span key={file.id} className="flex items-center gap-2 rounded-md border border-line px-2 py-1 text-xs text-slate-500">

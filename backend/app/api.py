@@ -16,6 +16,7 @@ from pydantic import BaseModel
 from . import db
 from .chat import build_context
 from .config import EDITABLE_KEYS, ConfigError, env_defaults, validate_patch
+from .documents.extract import extract_plain_text
 from .model import ModelError, make_model
 from .storage import UploadError, save_stream
 from .translate.glossary import parse_glossary
@@ -114,6 +115,15 @@ def health() -> dict[str, Any]:
     finally:
         adapter.close()
     return {"status": "ok", "model_reachable": reachable, "root": settings.get("model_root_url")}
+
+
+@router.get("/api/system/info")
+def system_info() -> dict[str, Any]:
+    return {
+        "data_dir": str(DATA_DIR),
+        "db_path": db.db_path(),
+        "counts": db.counts(),
+    }
 
 
 @router.get("/api/meta")
@@ -376,6 +386,37 @@ def delete_chat(chat_id: str) -> dict[str, Any]:
     return {"deleted": True}
 
 
+def _attachment_context(file_ids: list[str], settings: dict[str, Any]) -> tuple[str, list[dict[str, Any]]]:
+    per_file = int(settings.get("chat_attachment_max_chars", 8000))
+    total_budget = int(settings.get("chat_attachment_total_chars", 16000))
+    blocks: list[str] = []
+    meta_files: list[dict[str, Any]] = []
+    used = 0
+    for file_id in file_ids:
+        row = db.get_file(file_id)
+        if row is None:
+            continue
+        text = ""
+        error = None
+        try:
+            text = extract_plain_text(Path(row["stored_path"]), per_file)
+        except Exception as exc:
+            error = str(exc)
+        meta_files.append(
+            {"id": file_id, "name": row["original_filename"], "chars": len(text), "error": error}
+        )
+        if text:
+            block = "### " + row["original_filename"] + "\n" + text
+            if used + len(block) > total_budget:
+                block = block[: max(0, total_budget - used)]
+            if block:
+                blocks.append(block)
+                used += len(block)
+        if used >= total_budget:
+            break
+    return "\n\n".join(blocks), meta_files
+
+
 def _prepare_chat(chat_id: str, payload: MessageIn) -> list[dict[str, str]]:
     chat = db.get_chat(chat_id)
     if chat is None:
@@ -387,16 +428,21 @@ def _prepare_chat(chat_id: str, payload: MessageIn) -> list[dict[str, str]]:
         if db.get_file(file_id) is None:
             raise HTTPException(status_code=404, detail="attachment not found: " + file_id)
 
-    db.add_message(chat_id, "user", content)
+    settings = db.load_settings()
+    attachment_text, meta_files = ("", [])
     if payload.file_ids:
-        messages = db.list_messages(chat_id)
-        user_message = messages[-1]
-        db.attach_files(user_message["id"], payload.file_ids)
+        attachment_text, meta_files = _attachment_context(payload.file_ids, settings)
+
+    meta: dict[str, Any] = {"attachments": meta_files} if meta_files else {}
+    if attachment_text:
+        meta["attachment_text"] = attachment_text
+    message_id = db.add_message(chat_id, "user", content, meta=meta or None)
+    if payload.file_ids:
+        db.attach_files(message_id, payload.file_ids)
 
     if chat["title"] == "新对话":
         db.update_chat(chat_id, content[:24])
 
-    settings = db.load_settings()
     adapter = make_model(settings)
     try:
         info = adapter.info()
