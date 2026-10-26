@@ -126,6 +126,11 @@ export function JobDetail() {
           <div>单元：{current.done_units || 0}/{current.total_units || "-"}</div>
           <div>创建：{formatTime(current.created_at)}</div>
         </div>
+        {current.error_code === "pdf_converter_missing" && (
+          <div className="mt-2 text-xs text-amber-700">
+            服务器未安装 LibreOffice。执行 apt install libreoffice-writer，或在 .env 里设置 SOFFICE_BIN。
+          </div>
+        )}
         {current.error_summary && (
           <div className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
             {current.error_code}: {current.error_summary}
@@ -133,7 +138,7 @@ export function JobDetail() {
         )}
         {current.file_name?.toLowerCase().endsWith(".pdf") && current.status === "completed" && (
           <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            PDF 译文是重建后的 DOCX 文件，下载后用 Word 打开；原 PDF 的逐页版式不会保留。
+            PDF 译文是重新排版的 PDF（由 DOCX 转换生成），不保留原文件的逐页版式。
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-3 text-sm">

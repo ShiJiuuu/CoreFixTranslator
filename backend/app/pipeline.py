@@ -132,6 +132,8 @@ def translate_document(
     report_progress("rebuilding", 88, len(parsed.units), len(parsed.units))
     try:
         adapter.rebuild(parsed, translations, out_path)
+    except DocumentError as exc:
+        raise PipelineError(exc.code, exc.message) from exc
     except Exception as exc:
         raise PipelineError("rebuild_failed", str(exc)) from exc
 

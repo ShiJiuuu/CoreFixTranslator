@@ -169,7 +169,7 @@ MVP 约 **24.0 人日**；含页面动态配置与部署物的完整第一版约
 | D5 | **状态机在 service 层集中校验**；僵死恢复靠 `heartbeat_at` | 避免各入口随手改状态 | 状态表见 §5.4 |
 | D6 | DOCX **段落级翻译 + 主 Run 样式回写** | 段内跨 Run 映射复杂度高 | 二期做 Run 级映射 |
 | D7 | XLSX **只写文本单元格**，`keep_vba=True`，不重算公式 | 公式与结构是底线 | 保存前后快照对比 |
-| D8 | PDF **提取 → 翻译 → 重建单语 DOCX** | 覆盖原文本不可控 | 双语对照移出 v1 |
+| D8 | PDF **提取 → 翻译 → 重建 DOCX → LibreOffice 转 PDF**；原位覆盖开关默认关闭 | 直接覆盖原文本不可控；转 PDF 保证下载物可直接打开 | 需要服务器安装 LibreOffice 与 CJK 字体 |
 | D9 | 批次预算用 **`/tokenize` 精确计数**（LRU 缓存） | 自带分词端点 | 粗切 → 精确收敛 |
 | D10 | Skill 只作为 **白名单提示词片段**，版本入库 | 9B 模型不会自动读目录 | 不做工具调用 |
 | D11 | 输出契约固定为 `{"translations":[{"id","text"}]}`，**集合相等校验** | 思考块会破坏 JSON | 见 D18 |
@@ -363,7 +363,7 @@ class DocumentAdapter(Protocol):
 
 - PyMuPDF 按 block 提取并排序（页 → y → x），保留页码与 bbox；短于 2 字符的块跳过。
 - 扫描页判定 → `scanned_pdf_no_text`；加密 PDF → `encrypted_document`；损坏文件 → `corrupted_file`。
-- 输出：重建单语 DOCX；`PDF_INPLACE_OVERLAY` 实验开关默认关闭。
+- 输出：重建单语 DOCX 后转 PDF（LibreOffice）；原位覆盖实验开关默认关闭。
 - 报告：逐页字符数、块数、低文本页、图片页、输出段落数。
 
 **文本（0.5 人日）**

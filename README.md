@@ -86,6 +86,18 @@ Node.js 只在开发前端和构建 dist 时需要；生产用方式 A 或 B 都
 
 假模型会回显你的消息，用于验证界面、流式输出、任务流程；翻译任务会输出带 [目标语言] 前缀的占位文本。
 
+## PDF 导出依赖
+
+PDF 输入会先重建 DOCX，再调用 LibreOffice 转成 PDF：
+
+    apt install libreoffice-writer fonts-noto-cjk
+
+    # .env 可选
+    SOFFICE_BIN=/usr/bin/soffice
+    PDF_FONT_NAME=Noto Sans CJK SC
+
+没装 LibreOffice 时，PDF 任务会以 pdf_converter_missing 失败，其它格式不受影响。
+
 ## 模型要求
 
 注意：后台 Worker 跑在 API 进程内，必须使用 --workers 1（默认即是）。
@@ -128,7 +140,7 @@ llama-server 需要支持 OpenAI 兼容接口，建议参数：
 
 ## 已知限制
 
-- PDF 第一版只输出重建 DOCX（单语），下载文件名以 .docx 结尾，不保证原版式。
+- PDF 译文是重新排版的 PDF：先重建 DOCX 再转 PDF，不保留原文件的逐页版式。
 - DOCX 不处理脚注、尾注、文本框、批注、修订、SmartArt。
 - XLSX 不改公式、图表、透视表；.xlsm 仅保留 VBA 工程。
 - 无登录，默认只适合可信局域网；对外请自行加反代与访问控制。

@@ -11,14 +11,24 @@ from docx.text.paragraph import Paragraph
 from .base import DocumentError, ParsedDocument, Unit
 
 
+def _text_nodes(paragraph: Paragraph) -> list:
+    nodes = []
+    for run in paragraph._p.findall(qn("w:r")):
+        for node in run.findall(qn("w:t")):
+            nodes.append(node)
+    return nodes
+
+
 def _set_paragraph_text(paragraph: Paragraph, text: str) -> None:
-    runs = paragraph.runs
-    if runs:
-        runs[0].text = text
-        for run in runs[1:]:
-            run.text = ""
-    else:
+    # Only touch w:t nodes. Assigning run.text would clear the whole run and
+    # delete drawings / text boxes anchored in the same paragraph.
+    nodes = _text_nodes(paragraph)
+    if not nodes:
         paragraph.add_run(text)
+        return
+    nodes[0].text = text
+    for node in nodes[1:]:
+        node.text = ""
 
 
 def _iter_paragraphs(element: Any) -> Iterator[Paragraph]:
@@ -69,12 +79,16 @@ class DocxAdapter:
                         mapping[unit_id] = paragraph
                         headers += 1
 
+        shapes = len(list(doc.element.body.iter(qn("w:drawing")))) + len(
+            list(doc.element.body.iter(qn("w:pict")))
+        )
         meta = {
             "paragraphs": len(doc.paragraphs),
             "tables": len(doc.tables),
             "xml_paragraphs": len(units),
             "header_footer_units": headers,
             "skipped_hyperlinks": skipped_links,
+            "shapes": shapes,
         }
         return ParsedDocument(units=units, meta=meta, handle={"doc": doc, "mapping": mapping})
 
@@ -121,6 +135,18 @@ class DocxAdapter:
                 "ok": len(doc.tables) == expected_tables,
                 "source": expected_tables,
                 "output": len(doc.tables),
+            }
+        )
+        expected_shapes = int(parsed.meta.get("shapes", 0))
+        output_shapes = len(list(doc.element.body.iter(qn("w:drawing")))) + len(
+            list(doc.element.body.iter(qn("w:pict")))
+        )
+        checks.append(
+            {
+                "check": "shape_count",
+                "ok": output_shapes == expected_shapes,
+                "source": expected_shapes,
+                "output": output_shapes,
             }
         )
         return checks

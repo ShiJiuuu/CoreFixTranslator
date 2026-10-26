@@ -110,7 +110,7 @@ export default function Translate() {
               />
               {file && file.name.toLowerCase().endsWith(".pdf") && (
                 <div className="mt-1 text-xs text-amber-600">
-                  PDF 译文会输出为 DOCX（按页面重建），不是原 PDF 文件。
+                  PDF 译文会输出为重新排版的 PDF（不保留原版式），需要服务器安装 LibreOffice。
                 </div>
               )}
             </Field>
