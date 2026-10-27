@@ -94,27 +94,36 @@ Node.js 只在开发前端和构建 dist 时需要；生产用方式 A 或 B 都
 - 备份时连同 app.db 与 storage/ 一起备份
 - 设置页底部会显示实际数据目录、数据库路径与记录数，可用来确认
 
-## PDF 输出模式
+## PDF 翻译流程（Phase 1）
 
-默认 PDF_OUTPUT_MODE=overlay：在原 PDF 上擦除原文、原位写入译文。
+按《PDF翻译与排版重建技术方案》实施 Phase 1，先把 IR 和纯译文跑通：
 
-- 保留图片、表格线、页眉页脚、分栏等版式
-- 不依赖 LibreOffice
-- 译文变长时自动缩小字号；极端情况下可能溢出文本框或字号偏小
-- 扫描件（图片型 PDF）没有可提取文字，不会被翻译
+1. **版面解析**：PyMuPDF rawdict 提取文本块、bbox、字号、颜色；XY-cut 重排阅读顺序
+2. **结构判定**：标题层级、列表、图注、脚注、页眉页脚、页码
+3. **翻译**：以 Block 为单位，复用术语表、JSON 契约与批预算
+4. **输出**：纯译文重排，保留标题层级、段落顺序与列表缩进，不保留原 PDF 坐标版式
 
-需要“重排成新 PDF”时改用 reflow：
+输出格式：
 
-    PDF_OUTPUT_MODE=reflow
+    PDF_RENDER=pdf    默认，渲染 DOCX 后由 LibreOffice 转 PDF
+    PDF_RENDER=docx   直接输出 Word
 
-reflow 会重建 DOCX 再调用 LibreOffice 转 PDF，需要：
+需要 LibreOffice：
 
     apt install libreoffice-writer fonts-noto-cjk
-    # 可选
+
+    # .env
+    PDF_RENDER=pdf
     SOFFICE_BIN=/usr/bin/soffice
     PDF_FONT_NAME=Noto Sans CJK SC
 
-没装 LibreOffice 时，reflow 模式的 PDF 任务会以 pdf_converter_missing 失败，overlay 不受影响。
+没装 LibreOffice 时 PDF 任务会以 pdf_converter_missing 失败；可先设 PDF_RENDER=docx。
+
+当前限制（对应方案后续 Phase）：
+
+- 表格、图片、双栏版面不重建；图片丢弃，表格文字按段落输出
+- 不做中英对照、不做保留版式、不做扫描件 OCR
+- 标题层级按字号/加粗/编号规则判定，复杂排版可能误判
 
 ## 模型要求
 
@@ -158,7 +167,7 @@ llama-server 需要支持 OpenAI 兼容接口，建议参数：
 
 ## 已知限制
 
-- PDF 默认原位替换文本（保留版式）；可切 reflow 模式重排，版式不保留。
+- PDF 输出纯译文重排：保留标题/段落结构，不保留原版面、图片与表格。
 - DOCX 不处理脚注、尾注、文本框、批注、修订、SmartArt。
 - XLSX 不改公式、图表、透视表；.xlsm 仅保留 VBA 工程。
 - 无登录，默认只适合可信局域网；对外请自行加反代与访问控制。

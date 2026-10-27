@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .base import DocumentAdapter, DocumentError, ParsedDocument, Unit
 from .docx_doc import DocxAdapter
-from .pdf_doc import PdfAdapter
+from .pdf.adapter import PdfAdapter
 from .text_doc import TextAdapter
 from .xlsx_doc import XlsxAdapter
 

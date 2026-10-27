@@ -169,7 +169,7 @@ MVP 约 **24.0 人日**；含页面动态配置与部署物的完整第一版约
 | D5 | **状态机在 service 层集中校验**；僵死恢复靠 `heartbeat_at` | 避免各入口随手改状态 | 状态表见 §5.4 |
 | D6 | DOCX **段落级翻译 + 主 Run 样式回写** | 段内跨 Run 映射复杂度高 | 二期做 Run 级映射 |
 | D7 | XLSX **只写文本单元格**，`keep_vba=True`，不重算公式 | 公式与结构是底线 | 保存前后快照对比 |
-| D8 | PDF 默认 **原位覆盖**（擦除原文、按块重写译文，保留版式），可选 reflow 模式重建 DOCX 后转 PDF | 原位覆盖保版式；reflow 依赖 LibreOffice | PDF_OUTPUT_MODE=overlay/reflow |
+| D8 | PDF Phase 1：带几何 IR → 阅读顺序/结构判定 → Block 翻译 → 纯译文重排（DOCX，可选转 PDF） | 先跑通 IR 与纯译文，再迭代表格与保留版式 | PDF_RENDER=pdf/docx |
 | D9 | 批次预算用 **`/tokenize` 精确计数**（LRU 缓存） | 自带分词端点 | 粗切 → 精确收敛 |
 | D10 | Skill 只作为 **白名单提示词片段**，版本入库 | 9B 模型不会自动读目录 | 不做工具调用 |
 | D11 | 输出契约固定为 `{"translations":[{"id","text"}]}`，**集合相等校验** | 思考块会破坏 JSON | 见 D18 |

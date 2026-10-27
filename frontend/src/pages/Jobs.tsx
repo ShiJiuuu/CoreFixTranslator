@@ -128,7 +128,7 @@ export function JobDetail() {
         </div>
         {current.error_code === "pdf_converter_missing" && (
           <div className="mt-2 text-xs text-amber-700">
-            服务器未安装 LibreOffice。执行 apt install libreoffice-writer，或在 .env 里设置 SOFFICE_BIN。
+            服务器未安装 LibreOffice。执行 apt install libreoffice-writer，设置 SOFFICE_BIN，或在 .env 里设 PDF_RENDER=docx 先输出 Word。
           </div>
         )}
         {current.error_summary && (
@@ -138,7 +138,7 @@ export function JobDetail() {
         )}
         {current.file_name?.toLowerCase().endsWith(".pdf") && current.status === "completed" && (
           <div className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
-            PDF 译文默认原位替换文本，保留图片与版式；过长译文会自动缩小字号。
+            PDF 译文为纯译文重排（保留标题/段落结构，不保留原版面）。
           </div>
         )}
         <div className="mt-4 flex flex-wrap gap-3 text-sm">

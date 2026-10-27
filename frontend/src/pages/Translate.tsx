@@ -110,7 +110,7 @@ export default function Translate() {
               />
               {file && file.name.toLowerCase().endsWith(".pdf") && (
                 <div className="mt-1 text-xs text-amber-600">
-                  PDF 默认原位替换文本（保留原版式）；过长译文会自动缩小字号。
+                  PDF 输出纯译文重排（保留标题/段落结构，不保留原版面）；需要 LibreOffice 转 PDF，或设置 PDF_RENDER=docx。
                 </div>
               )}
             </Field>
