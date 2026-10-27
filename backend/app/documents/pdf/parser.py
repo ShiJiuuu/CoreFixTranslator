@@ -48,36 +48,107 @@ def _font_info(span: dict[str, Any]) -> FontInfo:
     )
 
 
-def _build_block(raw: dict[str, Any], page_index: int, index: int) -> Block | None:
-    line_texts: list[str] = []
-    spans: list[Span] = []
-    weights: list[int] = []
-    sizes: list[float] = []
+def _raw_lines(raw: dict[str, Any]) -> list[dict[str, Any]]:
+    lines: list[dict[str, Any]] = []
     for line in raw.get("lines") or []:
-        line_text = ""
+        spans: list[Span] = []
+        text_parts: list[str] = []
+        sizes: list[float] = []
+        origin_y: float | None = None
         for span in line.get("spans") or []:
             text = _span_text(span)
             if not text:
                 continue
-            line_text += text
+            text_parts.append(text)
             spans.append(Span(text=text, font=_font_info(span)))
             sizes.append(float(span.get("size") or 10.0))
-            weights.append(700 if int(span.get("flags") or 0) & 16 else 400)
-        if line_text.strip():
-            line_texts.append(line_text.strip())
-    text = flow_text("\n".join(line_texts))
-    if len(text) < 1:
-        return None
-    bbox = raw.get("bbox") or (0, 0, 0, 0)
-    return Block(
-        id="p" + str(page_index) + "b" + str(index),
-        type="paragraph",
-        bbox=BBox(float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])),
-        page_index=page_index,
-        reading_order=0,
-        spans=spans,
-        source_text=text,
-    )
+            if origin_y is None:
+                origin = span.get("origin")
+                if origin:
+                    origin_y = float(origin[1])
+        text = "".join(text_parts).strip()
+        if not text or not spans:
+            continue
+        bbox = line.get("bbox") or (0, 0, 0, 0)
+        lines.append(
+            {
+                "text": text,
+                "bbox": BBox(float(bbox[0]), float(bbox[1]), float(bbox[2]), float(bbox[3])),
+                "spans": spans,
+                "size": max(sizes) if sizes else 10.0,
+                "origin_y": origin_y if origin_y is not None else float(bbox[3]),
+            }
+        )
+    return lines
+
+
+def _paragraph_gap_threshold(lines: list[dict[str, Any]]) -> float:
+    # Baseline distance of normal line spacing is roughly 1.2-2.0x the font size.
+    # A bigger jump means a new paragraph; adapt upward for sparse layouts.
+    base = max((line["size"] for line in lines), default=10.0) * 2.0
+    gaps = [
+        lines[index]["origin_y"] - lines[index - 1]["origin_y"]
+        for index in range(1, len(lines))
+        if lines[index]["origin_y"] > lines[index - 1]["origin_y"]
+    ]
+    if len(gaps) >= 3:
+        base = max(base, statistics.median(gaps) * 1.5)
+    return base
+
+
+def _group_lines(lines: list[dict[str, Any]]) -> list[list[dict[str, Any]]]:
+    groups: list[list[dict[str, Any]]] = []
+    current: list[dict[str, Any]] = []
+    threshold = _paragraph_gap_threshold(lines)
+    for line in lines:
+        if not current:
+            current = [line]
+            continue
+        prev = current[-1]
+        gap = line["origin_y"] - prev["origin_y"]
+        new_group = gap > threshold
+        if abs(line["size"] - prev["size"]) >= 1.5:
+            new_group = True
+        if _BULLET.match(line["text"]) or _NUMBERED.match(line["text"]):
+            new_group = True
+        if new_group:
+            groups.append(current)
+            current = [line]
+        else:
+            current.append(line)
+    if current:
+        groups.append(current)
+    return groups
+
+
+def _build_blocks(raw: dict[str, Any], page_index: int, index: int) -> list[Block]:
+    lines = _raw_lines(raw)
+    if not lines:
+        return []
+    groups = _group_lines(lines)
+    blocks: list[Block] = []
+    for group_index, group in enumerate(groups):
+        text = flow_text("\n".join(line["text"] for line in group))
+        if not text:
+            continue
+        x0 = min(line["bbox"].x0 for line in group)
+        y0 = min(line["bbox"].y0 for line in group)
+        x1 = max(line["bbox"].x1 for line in group)
+        y1 = max(line["bbox"].y1 for line in group)
+        spans = [span for line in group for span in line["spans"]]
+        suffix = "" if len(groups) == 1 else "s" + str(group_index)
+        blocks.append(
+            Block(
+                id="p" + str(page_index) + "b" + str(index) + suffix,
+                type="paragraph",
+                bbox=BBox(x0, y0, x1, y1),
+                page_index=page_index,
+                reading_order=0,
+                spans=spans,
+                source_text=text,
+            )
+        )
+    return blocks
 
 
 def _split_groups(blocks: list[Block], threshold: float, horizontal: bool) -> list[list[Block]]:
@@ -222,9 +293,7 @@ def parse_pdf(path: Path, lang: str = "auto") -> DocIR:
         for block_index, raw_block in enumerate(raw.get("blocks") or []):
             if raw_block.get("type") != 0:
                 continue
-            block = _build_block(raw_block, page_index, block_index)
-            if block is not None:
-                page_info.blocks.append(block)
+            page_info.blocks.extend(_build_blocks(raw_block, page_index, block_index))
         pages.append(page_info)
 
     body_size = _body_size(pages)

@@ -88,3 +88,40 @@ def test_pdf_pipeline_outputs_docx(tmp_path: Path, monkeypatch):
     assert any("[zh-CN] Document Title" in paragraph.text for paragraph in document.paragraphs)
     assert report["hard_checks_ok"] is True
     assert report["units"] >= 5
+
+
+def test_list_items_split_into_blocks(tmp_path: Path):
+    source = tmp_path / "list.pdf"
+    document = fitz.open()
+    page = document.new_page(width=595, height=842)
+    page.insert_text(
+        (60, 120),
+        "• First bullet item\n• Second bullet item\n• Third bullet item",
+        fontsize=12,
+    )
+    document.save(str(source))
+    document.close()
+
+    ir = parse_pdf(source)
+    items = [block for block in ir.ordered_blocks() if block.type == "listItem"]
+    assert len(items) == 3
+    assert items[0].source_text.endswith("First bullet item")
+    assert items[2].source_text.endswith("Third bullet item")
+
+
+def test_sparse_line_spacing_stays_one_block(tmp_path: Path):
+    source = tmp_path / "spacing.pdf"
+    document = fitz.open()
+    page = document.new_page(width=595, height=842)
+    for index, text in enumerate(
+        ["First line of paragraph", "Second line continues", "Third line ends"]
+    ):
+        page.insert_text((60, 120 + index * 18), text, fontsize=12)
+    document.save(str(source))
+    document.close()
+
+    ir = parse_pdf(source)
+    blocks = ir.ordered_blocks()
+    assert len(blocks) == 1
+    assert "First line of paragraph" in blocks[0].source_text
+    assert "Third line ends" in blocks[0].source_text
