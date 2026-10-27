@@ -150,41 +150,6 @@ def _insert_fitted(page: Any, rect: Any, text: str, base_size: float, color: tup
         return False
 
 
-def _dominant_size(sizes: list[float], default: float = 10.0) -> float:
-    if not sizes:
-        return default
-    counts: dict[float, int] = {}
-    for value in sizes:
-        key = round(float(value) * 2) / 2
-        counts[key] = counts.get(key, 0) + 1
-    return max(counts.items(), key=lambda item: (item[1], item[0]))[0]
-
-
-def _measure_size(scratch_page: Any, rect: Any, text: str, base: float) -> float:
-    floor = max(4.0, base * 0.5)
-    size = max(4.0, min(base, 24.0))
-    while size >= floor:
-        remaining = scratch_page.insert_textbox(
-            rect, text, fontname="F0", fontsize=size, color=(0, 0, 0), align=0, render_mode=3
-        )
-        if remaining >= 0:
-            return size
-        size -= 0.25
-    return floor
-
-
-def _overlap_top(page_units: list[Unit], index: int, page_rect: Any) -> float:
-    rect = fitz.Rect(*page_units[index].location["bbox"])
-    top = page_rect.y1 - 36
-    for other in page_units[index + 1 :]:
-        other_rect = fitz.Rect(*other.location["bbox"])
-        overlap = min(rect.x1, other_rect.x1) - max(rect.x0, other_rect.x0)
-        if overlap > 0.3 * min(rect.width, other_rect.width):
-            top = min(top, other_rect.y0 - 4)
-            break
-    return top
-
-
 def overlay_pdf(parsed: ParsedDocument, translations: dict[str, str], out: Path) -> int:
     if fitz is None:
         raise DocumentError("parser_missing", "PyMuPDF is not installed")
@@ -194,19 +159,11 @@ def overlay_pdf(parsed: ParsedDocument, translations: dict[str, str], out: Path)
 
     document = fitz.open(str(source))
     font = fitz.Font("cjk")
-
-    max_width = max((page.rect.width for page in document), default=595.0)
-    max_height = max((page.rect.height for page in document), default=842.0)
-    scratch = fitz.open()
-    scratch_page = scratch.new_page(width=max_width, height=max_height)
-    scratch_page.insert_font(fontname="F0", fontbuffer=font.buffer)
-
-    items: list[dict[str, Any]] = []
+    replaced = 0
     for page_index in range(document.page_count):
-        page = document[page_index]
-        page_units = [unit for unit in parsed.units if int(unit.location.get("page", -1)) == page_index]
-        page_units.sort(key=lambda unit: unit.location.get("bbox", [0, 0, 0, 0])[1])
-        for index, unit in enumerate(page_units):
+        units = [unit for unit in parsed.units if int(unit.location.get("page", -1)) == page_index]
+        pending = []
+        for unit in units:
             translated = (translations.get(unit.id) or "").strip()
             if not translated or translated == unit.text.strip():
                 continue
@@ -216,68 +173,21 @@ def overlay_pdf(parsed: ParsedDocument, translations: dict[str, str], out: Path)
             rect = fitz.Rect(*bbox)
             if rect.is_empty or rect.width < 1 or rect.height < 1:
                 continue
-            if rect.width >= 0.55 * page.rect.width:
-                top = _overlap_top(page_units, index, page.rect)
-                bottom = min(top, rect.y0 + rect.height * 2.5, page.rect.y1 - 36)
-                if bottom > rect.y1 + 4:
-                    rect = fitz.Rect(rect.x0, rect.y0, rect.x1, bottom)
-            items.append(
-                {
-                    "page": page_index,
-                    "rect": rect,
-                    "text": translated,
-                    "base": float(unit.location.get("font_size") or 10.0),
-                    "color": int(unit.location.get("color") or 0),
-                }
-            )
-
-    groups: dict[float, list[dict[str, Any]]] = {}
-    for item in items:
-        key = round(item["base"] * 2) / 2
-        groups.setdefault(key, []).append(item)
-
-    for group in groups.values():
-        base = sorted(item["base"] for item in group)[len(group) // 2]
-        measured = [_measure_size(scratch_page, item["rect"], item["text"], base) for item in group]
-        cluster_size = min(measured)
-        for item in group:
-            item["size"] = cluster_size
-
-    scratch.close()
-
-    replaced = 0
-    for page_index in range(document.page_count):
-        page_items = [item for item in items if item["page"] == page_index]
-        if not page_items:
+            pending.append((rect, translated, float(unit.location.get("font_size") or 10.0), int(unit.location.get("color") or 0)))
+        if not pending:
             continue
+
         page = document[page_index]
-        for item in page_items:
-            page.add_redact_annot(item["rect"], fill=None)
+        for rect, _text, _size, _color in pending:
+            page.add_redact_annot(rect, fill=None)
         page.apply_redactions(
             images=fitz.PDF_REDACT_IMAGE_NONE,
             graphics=fitz.PDF_REDACT_LINE_ART_NONE,
         )
         page.insert_font(fontname="F0", fontbuffer=font.buffer)
-        for item in page_items:
-            color = _rgb(item["color"])
-            try:
-                remaining = page.insert_textbox(
-                    item["rect"], item["text"], fontname="F0", fontsize=item["size"], color=color, align=0
-                )
-            except Exception:
-                remaining = -1
-            if remaining < 0:
-                try:
-                    page.insert_text(
-                        (item["rect"].x0, item["rect"].y0 + item["size"]),
-                        item["text"],
-                        fontname="F0",
-                        fontsize=item["size"],
-                        color=color,
-                    )
-                except Exception:
-                    pass
-            replaced += 1
+        for rect, translated, size, color in pending:
+            if _insert_fitted(page, rect, translated, size, _rgb(color)):
+                replaced += 1
 
     out.parent.mkdir(parents=True, exist_ok=True)
     document.save(str(out), garbage=3, deflate=True)
@@ -330,7 +240,7 @@ class PdfAdapter:
                 text = flow_text("\n".join(line_texts))
                 if len(text) < 2:
                     continue
-                size = _dominant_size(sizes)
+                size = statistics.median(sizes) if sizes else 10.0
                 color = colors[0] if colors else 0
                 units.append(
                     Unit(
